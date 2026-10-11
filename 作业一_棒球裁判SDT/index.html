@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好球还是坏球？ · 棒球主审判定中的信号检测论</title>
+<!--
+  棒球主审「好球 / 坏球」判定中的信号检测论 —— 交互式实验
+
+  纯前端实现，双击本文件即可在浏览器中运行：
+    · 全部脚本用传统 <script src> 加载（不使用 ES module，避免 file:// 的 CORS 限制）
+    · 不 fetch 任何本地文件，配置全部内联在 js/config.js
+    · 不引用任何 CDN / 外部库，图表由 Canvas 手绘
+-->
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">⚾</span>
+    <div>
+      <h1>好球还是坏球？</h1>
+      <p>棒球主审判定中的信号检测论 · 交互式实验</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ==================================================================
+       实验设置
+       =================================================================== -->
+  <section class="card" id="setupPanel">
+    <h2>实验设置</h2>
+
+    <div class="form-grid">
+      <label class="field">
+        <span>难度</span>
+        <select id="selLevel"></select>
+        <small id="levelNote" class="dim"></small>
+      </label>
+
+      <label class="field">
+        <span>好球占全部投球的比例 P(S)</span>
+        <select id="selPrior"></select>
+      </label>
+
+      <label class="field">
+        <span>执法风格</span>
+        <select id="selStyle"></select>
+        <small id="styleHint" class="dim"></small>
+      </label>
+
+      <label class="field">
+        <span>打者身高</span>
+        <select id="selBatter"></select>
+      </label>
+
+      <label class="field">
+        <span>每局投球数</span>
+        <select id="selTrials"></select>
+      </label>
+
+      <label class="field">
+        <span>判定限时</span>
+        <select id="selWindow"></select>
+      </label>
+    </div>
+
+    <details class="mini-details">
+      <summary>更多选项</summary>
+      <div class="form-grid">
+        <label class="field">
+          <span>判断标准的记录方式</span>
+          <select id="selRoc"></select>
+        </label>
+        <label class="field">
+          <span>极端比例的修正方法</span>
+          <select id="selCorrection"></select>
+          <small class="dim">结果页可随时切换对比。</small>
+        </label>
+      </div>
+    </details>
+
+    <div class="preview" id="setupPreview"></div>
+
+    <div class="actions">
+      <button id="btnStart" class="primary">开始实验</button>
+      <span class="dim small-note" id="practiceNote"></span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       说明（默认折叠）
+       =================================================================== -->
+  <details class="card doc" id="introCard">
+    <summary>这个实验在测什么？</summary>
+    <div class="doc-body">
+
+      <h3>信号与噪声</h3>
+      <p><b>信号 = 好球</b>：球经过好球区。<b>噪声 = 坏球</b>：球没有经过好球区。</p>
+      <p><b>怎么玩：</b>球从投手丘飞来。穿过好球区后，你必须在
+        <b id="howtoWindow">1500</b> 毫秒内作出判罚 —— 按 <kbd>D</kbd> 或 <kbd>→</kbd> 判好球，
+        按 <kbd>A</kbd> 或 <kbd>←</kbd> 判坏球，也可以直接点画面下方的两个按钮。
+        每一球结束后会立刻告诉你球的真实位置与对错。</p>
+      <p>你只看到球飞过本垒板的一瞬间，然后必须做出二择一判断。因为球速很快、
+        落点又压在边线上，你的知觉必然带有不确定性 —— 这正是信号检测论要测量的东西：
+        <b>你分辨好坏球的能力（d′）</b>，以及
+        <b>你判罚的松紧倾向（c）</b>。这两件事是相互独立的。</p>
+
+      <h3>判定规则：擦到就算好球</h3>
+      <p>棒球规则原文是 <i>any part of the ball passes through any part of the strike zone</i>
+        ——<b>球的任何一部分经过好球区的任何一部分，就是好球</b>。所以球心在好球区外、
+        但球体压到线（甚至只是相切），仍然算好球。</p>
+      <p>真实棒球里的好球区是一个三维立体区域（本垒板上方的一根"柱子"）；本实验按规模
+        把它简化为<b>一个平面</b>（球穿过本垒板前缘平面时的截面）。简化之后，
+        "球经过好球区"就等价于平面上"圆盘与矩形相交"，也就是</p>
+      <p class="formula">球心到好球区矩形的最短距离 ≤ 球半径　　
+        （球半径 1.45″，球直径约 2.9″）</p>
+      <p>画面上只有<b>好球区这一条白线</b>（宽 17″ = 本垒板宽，高 = 0.115 × 打者身高 cm）。
+        判据是<b>球本身有没有碰到这个框</b>，不是球心落在哪里 —— 所以反馈时会把整颗球
+        画在它真实的位置，擦没擦到一眼就能看出来。</p>
+
+      <h3>难度 ε 是什么意思</h3>
+      <p>ε 就是<b>球边到好球区线的那一小段距离</b>，反馈时会用一条短粗线直接标出来：</p>
+      <ul>
+        <li>好球试次：球边<b>压过</b>了线 ε（压线深度）；</li>
+        <li>坏球试次：球边离线的<b>空隙</b>是 ε。</li>
+      </ul>
+
+      <h3>四种结果</h3>
+      <table class="mini-table">
+        <thead>
+          <tr><th></th><th>真实是好球</th><th>真实是坏球</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>你判好球</th>
+            <td class="good"><b>命中 Hit</b><br>判对了，投手得利</td>
+            <td class="bad"><b>虚报 FA</b><br>误判好球，打者被冤枉，<b>可能直接被三振</b></td>
+          </tr>
+          <tr>
+            <th>你判坏球</th>
+            <td class="bad"><b>漏报 Miss</b><br>漏判好球，投手白投一个好球</td>
+            <td class="good"><b>正确拒绝 CR</b><br>判对了，坏球数 +1</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>注意 <b>FA 与 Miss 的代价并不对称</b>：一次误判好球可能直接造成三振出局且不可逆，
+        而漏判只是让投手少得一个好球。这就是真实比赛里"投手友好／打者友好"倾向有理性
+        基础的来源，也是本实验用来改变你判断标准的场景动机。</p>
+
+      <h3>为什么只投擦边球</h3>
+      <p>正中好球区或明显偏低的球不构成检测问题，谁都不会判错，测得的信息量为零。
+        所以本实验只投<b>球边离好球区线 ±3″ 以内</b>的球 —— 这也正是真实棒球里最常发生
+        争议的"压线球"。</p>
+    </div>
+  </details>
+
+  <details class="card doc">
+    <summary>难度是怎么设定的？为什么球的位置会有一点点"晃"？</summary>
+    <div class="doc-body">
+      <h3>难度 ε = 球边到好球区线的距离</h3>
+      <p>设置里的"难度"控制的是一个<b>物理量 ε</b>：球边到好球区线的那一小段真实距离（英寸）。
+        它<b>不是</b>让你直接选一个 d′ —— d′ 一律由你的实际成绩事后算出来。</p>
+      <table class="data-table">
+        <thead><tr><th>难度</th><th>ε</th><th>直观参照</th><th>理想上限 2ε/σ</th></tr></thead>
+        <tbody>
+          <tr><td>L1 极明显</td><td>3.0″</td><td>约一个球直径</td><td>6.0</td></tr>
+          <tr><td>L2 明显</td><td>2.0″</td><td>约 2/3 球直径</td><td>4.0</td></tr>
+          <tr><td><b>L3 基准</b></td><td><b>1.0″</b></td><td>约 1/3 球直径</td><td>2.0</td></tr>
+          <tr><td>L4 困难</td><td>0.6″</td><td>约 1/5 球直径</td><td>1.2</td></tr>
+          <tr><td>L5 极限</td><td>0.3″</td><td>极微小的偏差</td><td>0.6</td></tr>
+        </tbody>
+      </table>
+      <p>每一球的 ε 还会在基准值 ±20% 内浮动，避免你记住固定的偏移量。</p>
+
+      <h3>外部噪声 σ</h3>
+      <p>如果画面是像素完美的，你的知觉噪声会趋近于 0、d′ 冲到天上，什么也测不出来。
+        所以程序在每一球给球的<b>显示位置</b>叠加了一个已知大小的随机偏移 σ
+        （表现为"球在动、落点看不准"）：</p>
+      <p class="formula">
+        σ<sub>总</sub>² = σ<sub>外部</sub>² + σ<sub>自己</sub>²　　d′<sub>上限</sub> = 2ε / σ<sub>外部</sub>　　
+        σ<sub>自己</sub> = √(σ<sub>总</sub>² − σ<sub>外部</sub>²)
+      </p>
+      <p>σ<sub>外部</sub> = 1.0″ 是程序注入的、你无法归因的噪声。由你的成绩反推出来的
+        σ<sub>自己</sub> 才是<b>你自己的知觉噪声</b> —— 一个无法直接观测、只能算出来的心理量。
+        反馈阶段会把"球的真实位置"和"你实际看到的位置"同时画出来，你能亲眼看到它把球挪了多远。</p>
+    </div>
+  </details>
+
+  <!-- ==================================================================
+       实验舞台
+       =================================================================== -->
+  <section class="card stage-card hidden" id="stagePanel">
+
+    <div class="hud">
+      <div class="hud-item"><span class="hud-k">投球</span><span class="hud-v" id="hudTrial">1 / 40</span></div>
+      <div class="hud-item"><span class="hud-k">难度</span><span class="hud-v" id="hudLevel">—</span></div>
+      <div class="hud-item"><span class="hud-k">打者</span><span class="hud-v" id="hudBatter">—</span></div>
+      <div class="hud-item"><span class="hud-k">P(S)</span><span class="hud-v" id="hudPrior">—</span></div>
+      <div class="hud-item"><span class="hud-k">风格</span><span class="hud-v" id="hudStyle">—</span></div>
+      <div class="hud-item"><span class="hud-k">你的判罚</span><span class="hud-v" id="hudTally">好球 0 / 坏球 0</span></div>
+      <div class="hud-item wide"><span class="hud-k">上一球</span><span class="hud-v" id="hudLast">—</span></div>
+    </div>
+
+    <div class="stage-wrap">
+      <canvas id="stageCanvas"></canvas>
+      <div class="practice-badge hidden" id="practiceBadge">练习球（不计入统计）</div>
+    </div>
+
+    <div class="timer-wrap" id="timerWrap">
+      <div class="timer-fill" id="timerFill"></div>
+      <span class="timer-label" id="timerLabel">判定限时</span>
+    </div>
+
+    <div class="phase-hint" id="phaseHint">点击"开始实验"</div>
+
+    <div class="response-row" id="responseRow">
+      <button id="btnBall" class="resp ball">
+        <span class="resp-main">判坏球 BALL</span>
+        <span class="resp-key">A / ←</span>
+      </button>
+      <button id="btnStrike" class="resp strike">
+        <span class="resp-main">判好球 STRIKE</span>
+        <span class="resp-key">D / →</span>
+      </button>
+    </div>
+
+    <div class="confidence-row hidden" id="confidenceRow">
+      <span class="conf-title">你对这一球有多确信？</span>
+      <div class="conf-btns" id="confBtns"></div>
+    </div>
+
+    <div class="actions">
+      <button id="btnAbort" class="ghost">中止本局</button>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       结果
+       =================================================================== -->
+  <section class="card hidden" id="resultPanel">
+    <h2 id="resTitle">本局结果</h2>
+    <p class="dim" id="resCondition"></p>
+
+    <div class="result-grid">
+
+      <div class="res-block">
+        <h3>2 × 2 计数表</h3>
+        <table class="matrix">
+          <thead>
+            <tr><th></th><th>真实是好球</th><th>真实是坏球</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>你判好球</th>
+              <td class="good" id="mxH">—</td>
+              <td class="bad" id="mxFA">—</td>
+            </tr>
+            <tr>
+              <th>你判坏球</th>
+              <td class="bad" id="mxM">—</td>
+              <td class="good" id="mxCR">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="dim" id="mxTimeout"></p>
+      </div>
+
+      <div class="res-block">
+        <h3>核心指标</h3>
+        <div class="metric-list">
+          <div class="metric"><span>P(Hit)　命中率</span><b id="mPHit">—</b></div>
+          <div class="metric"><span>P(FA)　虚报率</span><b id="mPFA">—</b></div>
+          <div class="metric sep"><span>d′　分辨力</span><b id="mDprime" class="big">—</b></div>
+          <div class="metric"><span>c　判断标准</span><b id="mC">—</b></div>
+          <div class="metric"><span>β　似然比</span><b id="mBeta">—</b></div>
+          <div class="metric sep"><span>正确率</span><b id="mAcc">—</b></div>
+          <div class="metric"><span>超时率</span><b id="mTimeout">—</b></div>
+          <div class="metric sep"><span>ε　球边到好球区线</span><b id="mEps">—</b></div>
+          <div class="metric"><span>d′ 理论上限</span><b id="mTheo">—</b></div>
+          <div class="metric"><span>σ<sub>总</sub>　总噪声（反推）</span><b id="mSigTotal">—</b></div>
+          <div class="metric"><span>σ<sub>自己</sub>　你的知觉噪声</span><b id="mSigInt">—</b></div>
+        </div>
+        <div class="corr-row">
+          <label>修正方法
+            <select id="selCorrection2"></select>
+          </label>
+          <span class="dim" id="corrNote"></span>
+        </div>
+        <p class="notes" id="resNotes"></p>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>信号 / 噪声分布与判断标准</h3>
+        <canvas id="distCanvas" class="chart"></canvas>
+        <p class="dim" id="distNote"></p>
+      </div>
+      <div class="chart-card">
+        <h3>ROC 曲线</h3>
+        <canvas id="rocCanvas" class="chart"></canvas>
+        <p class="dim" id="rocNote"></p>
+      </div>
+      <div class="chart-card">
+        <h3>d′ 随 ε 的变化</h3>
+        <canvas id="regCanvas" class="chart"></canvas>
+        <p class="dim">把同一条件下的不同难度各跑一局，斜率就能告诉你自己的知觉噪声有多大。</p>
+      </div>
+    </div>
+
+    <details class="mini-details">
+      <summary>分组统计：哪些边界更难判？</summary>
+      <table class="data-table" id="groupTable">
+        <thead>
+          <tr><th>边界类型</th><th>有效试次</th><th>P(Hit)</th><th>P(FA)</th><th>d′</th><th>c</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="dim" id="groupNote"></p>
+    </details>
+
+    <details class="mini-details">
+      <summary>本次会话的历局成绩</summary>
+      <table class="data-table" id="historyTable">
+        <thead>
+          <tr><th>局</th><th>难度</th><th>ε (″)</th><th>P(S)</th><th>执法风格</th><th>打者</th>
+              <th>P(Hit)</th><th>P(FA)</th><th>d′</th><th>c</th><th>正确率</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </details>
+
+    <div class="actions">
+      <button id="btnAgain" class="primary">再来一局</button>
+      <button id="btnBackToSetup">返回设置</button>
+      <details class="inline-details">
+        <summary>导出数据</summary>
+        <div class="inline-details-body">
+          <button id="btnExportTrials" class="ghost">导出 CSV（试次级）</button>
+          <button id="btnExportSummary" class="ghost">导出 CSV（汇总级）</button>
+          <button id="btnClearHistory" class="ghost">清空会话历史</button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <details class="card doc">
+    <summary>方法与公式</summary>
+    <div class="doc-body">
+      <h3>指标</h3>
+      <ul>
+        <li>P(Hit) = H / (H + M)，P(FA) = FA / (FA + CR)</li>
+        <li>d′ = z(P(Hit)) − z(P(FA))</li>
+        <li>c = −½ [ z(P(Hit)) + z(P(FA)) ]　　<b>c &gt; 0 表示保守</b>，即偏向判坏球</li>
+        <li>β = exp(d′ × c)</li>
+        <li>正确率 = (H + CR) / (H + M + FA + CR)</li>
+      </ul>
+
+      <h3>0 / 1 极端比例的修正</h3>
+      <p>当 P(Hit) = 1 或 P(FA) = 0 时 z 值为 ±∞，d′ 会发散。默认使用 Hautus (1995)
+        的对数线性修正 <code>P = (count + 0.5) / (N + 1)</code>，结果页可切换为
+        <code>1/(2N)</code> 修正或不修正，直接对比差异。</p>
+
+      <h3>超时的球怎么算</h3>
+      <p>限时内没有按键的球在数学上无法归入 2×2 表，默认<b>单独记为"未响应"并从
+        d′ 的计算中剔除</b>，只报告超时率。若把超时当成"判坏球"，会把反应速度的差异
+        错误地混进 d′ 里。</p>
+
+      <h3>z(p) 与 Φ(x) 的实现</h3>
+      <p>z(p) 采用 Wichura (1988) 的 Algorithm AS 241（即 R 语言 <code>qnorm</code> 所用算法），
+        相对精度约 1e-15；Φ(x) 采用 Numerical Recipes §6.2 的 erfc 切比雪夫拟合，
+        误差小于 1.2e-7。两者均手写，不依赖任何外部库。</p>
+
+      <h3>为什么要注入外部噪声</h3>
+      <p>这是心理物理学中的外部噪声范式（Lu &amp; Dosher, 1998）。像素完美的显示会让
+        被试的内部噪声 σ 趋近于 0、d′ 冲到天上，实验失去测量能力。注入一个<b>已知大小、
+        被试无法归因</b>的外部噪声之后，σ<sub>总</sub>² = σ<sub>外部</sub>² + σ<sub>自己</sub>²
+        就可以解出被试自身的 σ<sub>自己</sub>，这正是现代心理物理学测量内部噪声的常规做法。</p>
+
+      <h3>参考文献</h3>
+      <ol class="refs">
+        <li>Green, D. M., &amp; Swets, J. A. (1966). <i>Signal Detection Theory and Psychophysics.</i> Wiley.</li>
+        <li>Macmillan, N. A., &amp; Creelman, C. D. (2005). <i>Detection Theory: A User's Guide</i> (2nd ed.). Erlbaum.</li>
+        <li>Hautus, M. J. (1995). Corrections for extreme proportions and their biasing effects on estimated
+          values of d′. <i>Behavior Research Methods, Instruments, &amp; Computers, 27</i>, 46–51.</li>
+        <li>Stanislaw, H., &amp; Todorov, N. (1999). Calculation of signal detection theory measures.
+          <i>Behavior Research Methods, Instruments, &amp; Computers, 31</i>, 137–149.</li>
+        <li>Wichura, M. J. (1988). Algorithm AS 241: The percentage points of the normal distribution.
+          <i>Applied Statistics, 37</i>, 477–484.</li>
+        <li>Lu, Z.-L., &amp; Dosher, B. A. (1998). External noise distinguishes attention mechanisms.
+          <i>Vision Research, 38</i>, 1183–1198.</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer class="foot">
+    <span>工程心理学 · 信号检测论交互实验</span>
+    <span class="dim">纯前端实现，无需联网，双击 index.html 即可运行</span>
+  </footer>
+
+</main>
+
+<!-- 脚本加载顺序：配置 → 数学 → 试次 → 统计 → 场景 → 图表 → 导出 → 主控 -->
+<script src="js/config.js"></script>
+<script src="js/sdt.js"></script>
+<script src="js/trial.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/export.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
