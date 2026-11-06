@@ -218,11 +218,16 @@ window.Results = (function () {
       [s.means.bar_none, s.means.bar_tick]
     ]);
 
-    // 整数倾向的检查：真值带小数，看看被试是否仍然给出整数 / 5 的倍数
+    // 整数倾向的检查：真值一半是 5 的倍数、一半不是；
+    // 看被试的答案是否大量落在 5 的倍数上，以及两类真值的误差是否有差别
+    const round5 = trials.filter(t => Number(t.round5) === 1 || (t.true_prop % 5 === 0));
+    const nonRound5 = trials.filter(t => !(Number(t.round5) === 1 || (t.true_prop % 5 === 0)));
     const roundness = {
-      integerRate: window.S.mean(trials.map(t => Math.abs(t.judged - Math.round(t.judged)) < 0.05 ? 1 : 0)),
-      multiple5Rate: window.S.mean(trials.map(t => Math.abs((t.judged * 10) % 50) < 0.5 ? 1 : 0)),
-      exactHitRate: window.S.mean(trials.map(t => Math.abs(t.judged - t.true_prop) < 0.05 ? 1 : 0))
+      multiple5Rate: window.S.mean(trials.map(t => t.judged % 5 === 0 ? 1 : 0)),
+      roundMAE: window.S.mean(round5.map(t => t.err)),
+      nonRoundMAE: window.S.mean(nonRound5.map(t => t.err)),
+      nRound: round5.length,
+      nNonRound: nonRound5.length
     };
 
     return {
@@ -438,7 +443,7 @@ window.Results = (function () {
       { k: '饼图 · 有刻度', v: U.fmt(d.mae.pie_tick.mean, 1), u: 'pp' },
       { k: '条形 · 无刻度', v: U.fmt(d.mae.bar_none.mean, 1), u: 'pp' },
       { k: '条形 · 有刻度', v: U.fmt(d.mae.bar_tick.mean, 1), u: 'pp' },
-      { k: '整数回答', v: U.pct(d.roundness.integerRate, 0), u: '' }
+      { k: '5 的倍数回答', v: U.pct(d.roundness.multiple5Rate, 0), u: '' }
     ]));
 
     const grid = U.el('div', { class: 'panel-grid' });
@@ -449,10 +454,34 @@ window.Results = (function () {
       class: 'panel__caption',
       html: '饼图 ' + U.fmt(d.mae.pie_none.mean, 1) + ' → ' + U.fmt(d.mae.pie_tick.mean, 1) +
         '；条形 ' + U.fmt(d.mae.bar_none.mean, 1) + ' → ' + U.fmt(d.mae.bar_tick.mean, 1) + '。' +
-        '真值带一位小数（如 42.6%），滑杆步长 0.1%；整数回答占 ' + U.pct(d.roundness.integerRate, 0) +
-        '，5 的倍数占 ' + U.pct(d.roundness.multiple5Rate, 0) + '。'
+        '真值一半是 5 的倍数、一半不是；被试的答案里 ' + U.pct(d.roundness.multiple5Rate, 0) +
+        ' 落在 5 的倍数上。'
     }));
     grid.appendChild(p1);
+
+    // 真值类型：5 的倍数 vs 非 5 的倍数
+    const pType = panel('真值类型：5 的倍数 vs 非 5 的倍数', '各 ' + d.roundness.nRound + ' / ' + d.roundness.nNonRound + ' 试次');
+    const tType = U.el('table', { class: 'table table--tight' });
+    tType.innerHTML = '<thead><tr><th>真值</th><th>n</th><th>MAE</th></tr></thead>';
+    const bType = U.el('tbody');
+    bType.appendChild(U.el('tr', {},
+      U.el('td', { text: '5 的倍数（10/15/40/60/85）' }),
+      U.el('td', { text: String(d.roundness.nRound) }),
+      U.el('td', { text: U.fmt(d.roundness.roundMAE, 1) + ' pp' })
+    ));
+    bType.appendChild(U.el('tr', {},
+      U.el('td', { text: '非 5 的倍数（7/22/33/68/92）' }),
+      U.el('td', { text: String(d.roundness.nNonRound) }),
+      U.el('td', { text: U.fmt(d.roundness.nonRoundMAE, 1) + ' pp' })
+    ));
+    tType.appendChild(bType);
+    pType.appendChild(U.el('div', { class: 'table-wrap' }, tType));
+    pType.appendChild(U.el('p', {
+      class: 'panel__caption',
+      html: '若整五真值的误差更小，说明凑整或刻度锚点帮了忙；若更大，说明"凑整"可能是偏差来源。' +
+        '这是一个描述性检查，n 很小时只作参考。'
+    }));
+    grid.appendChild(pType);
 
     const p2 = panel('判断偏差与周期幂模型', '横轴真实比例，纵轴判断值');
     p2.appendChild(U.el('div', { id: 'chart-prop-bias' }));

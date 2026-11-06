@@ -30,6 +30,7 @@ window.PropJudge = (function () {
           chart: cond.chart,
           ticks: cond.ticks,
           true_prop: p,
+          round5: p % 5 === 0 ? 1 : 0,
           block_order: 'main'
         });
       });
@@ -42,12 +43,13 @@ window.PropJudge = (function () {
   }
 
   function practice() {
-    const props = [18.6, 61.3, 42.7, 83.4];
+    const props = [20, 13, 60, 47];
     return C().conditions.map((cond, i) => ({
       cond: cond.id,
       chart: cond.chart,
       ticks: cond.ticks,
       true_prop: props[i],
+      round5: props[i] % 5 === 0 ? 1 : 0,
       block_order: 'practice'
     }));
   }
@@ -158,13 +160,13 @@ window.PropJudge = (function () {
     input.type = 'range';
     input.min = '0';
     input.max = '100';
-    input.step = String(C().sliderStep || 0.1);
+    input.step = String(C().sliderStep || 1);
     input.value = String(C().sliderStart);
     input.setAttribute('aria-label', '判断比例');
 
     const val = document.createElement('span');
     val.className = 'answer__value';
-    val.innerHTML = Number(C().sliderStart).toFixed(1) + '<small>%</small>';
+    val.innerHTML = String(C().sliderStart) + '<small>%</small>';
 
     row.appendChild(input);
     row.appendChild(val);
@@ -176,7 +178,7 @@ window.PropJudge = (function () {
 
     const hintEl = document.createElement('p');
     hintEl.className = 'answer__hint';
-    hintEl.textContent = '拖动滑块 · 可精确到 0.1% · 按空格确认';
+    hintEl.textContent = '拖动滑块 · 按空格确认';
 
     wrap.appendChild(row);
     wrap.appendChild(btn);
@@ -184,7 +186,7 @@ window.PropJudge = (function () {
     host.appendChild(wrap);
 
     input.addEventListener('input', function () {
-      val.innerHTML = Number(input.value).toFixed(1) + '<small>%</small>';
+      val.innerHTML = input.value + '<small>%</small>';
     });
 
     ui = { input: input, val: val, btn: btn };
@@ -210,12 +212,12 @@ window.PropJudge = (function () {
       }
 
       function submit() {
-        const judged = Math.round(Number(ui.input.value) * 10) / 10;
+        const judged = Number(ui.input.value);
         finish({
           key: 'space',
           rt: Math.round(Engine.now() - onset),
           judged: judged,
-          err: Math.round((judged - trial.true_prop) * 10) / 10,
+          err: judged - trial.true_prop,
           correct: null,
           timeout: 0
         });
@@ -250,7 +252,7 @@ window.PropJudge = (function () {
 
     const real = document.createElement('div');
     real.className = 'feedback feedback--ok';
-    real.textContent = '实际 ' + Number(trial.true_prop).toFixed(1) + '%';
+    real.textContent = '实际 ' + trial.true_prop + '%';
 
     box.appendChild(real);
     host.appendChild(box);
@@ -290,9 +292,9 @@ window.PropJudge = (function () {
       html:
         '<p><b>你要做的：</b>屏幕上会出现一个饼图或一条横条，其中一部分是<b>铜色</b>。'
         + '请估计铜色部分占整体的<b>百分之多少</b>。</p>'
-        + '<p>拖动下方的滑块，数字会跟着变（可以精确到 0.1%）；按<b>空格</b>确认。没有时间限制，请尽量准确。</p>'
-        + '<p class="rule">有些图带 25 / 50 / 75 的刻度线，有些没有。刻度只给参照，不标数字。比例本身带小数，'
-        + '请按你看到的估计作答，<b>不必凑成整数</b>。</p>'
+        + '<p>拖动下方的滑块，数字会跟着变；按<b>空格</b>确认。没有时间限制，请尽量准确。</p>'
+        + '<p class="rule">有些图带 25 / 50 / 75 的刻度线，有些没有。刻度只给参照，不标数字。'
+        + '一半左右的比例不是 5 的倍数，<b>不必凑成 5 或 10 的倍数</b>，给最接近你判断的整数即可。</p>'
         + '<p>共 40 次，先做 4 次带反馈的练习。</p>',
       facts: [
         { k: '试次', v: '40 正式 + 4 练习' },
