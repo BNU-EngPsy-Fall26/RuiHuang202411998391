@@ -89,6 +89,12 @@ check('比例判断 40 试次', pFormal.length === 40, 'n=' + pFormal.length);
   check('条件 ' + c + ' 比例不重复', new Set(xs.map(t => t.true_prop)).size === 10);
 });
 check('练习 4 试次且四条件各一', PropJudge.practice().length === 4);
+check('比例池全是小数', CONFIG.prop.pool.every(v => Math.abs(v - Math.round(v)) > 0.01),
+  CONFIG.prop.pool.join(','));
+check('滑杆步长 0.1', CONFIG.prop.sliderStep === 0.1, 'step=' + CONFIG.prop.sliderStep);
+check('比例池避开 25/50/75', CONFIG.prop.pool.every(v =>
+  Math.abs(v - 25) > 2 && Math.abs(v - 50) > 2 && Math.abs(v - 75) > 2));
+check('正式试次真值带小数', pFormal.some(t => Math.abs(t.true_prop - Math.round(t.true_prop)) > 0.01));
 
 console.log('\n[2] 统计');
 

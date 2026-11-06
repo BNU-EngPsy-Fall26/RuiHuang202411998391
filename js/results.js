@@ -218,13 +218,21 @@ window.Results = (function () {
       [s.means.bar_none, s.means.bar_tick]
     ]);
 
+    // 整数倾向的检查：真值带小数，看看被试是否仍然给出整数 / 5 的倍数
+    const roundness = {
+      integerRate: window.S.mean(trials.map(t => Math.abs(t.judged - Math.round(t.judged)) < 0.05 ? 1 : 0)),
+      multiple5Rate: window.S.mean(trials.map(t => Math.abs((t.judged * 10) % 50) < 0.5 ? 1 : 0)),
+      exactHitRate: window.S.mean(trials.map(t => Math.abs(t.judged - t.true_prop) < 0.05 ? 1 : 0))
+    };
+
     return {
       nSubs: subjects.length,
       nTrials: trials.length,
       subjects: subjects,
       mae: mae,
       anova: subjects.length >= 2 ? window.S.anova2x2(anovaCells) : null,
-      bias: bias
+      bias: bias,
+      roundness: roundness
     };
   }
 
@@ -429,7 +437,8 @@ window.Results = (function () {
       { k: '饼图 · 无刻度', v: U.fmt(d.mae.pie_none.mean, 1), u: 'pp' },
       { k: '饼图 · 有刻度', v: U.fmt(d.mae.pie_tick.mean, 1), u: 'pp' },
       { k: '条形 · 无刻度', v: U.fmt(d.mae.bar_none.mean, 1), u: 'pp' },
-      { k: '条形 · 有刻度', v: U.fmt(d.mae.bar_tick.mean, 1), u: 'pp' }
+      { k: '条形 · 有刻度', v: U.fmt(d.mae.bar_tick.mean, 1), u: 'pp' },
+      { k: '整数回答', v: U.pct(d.roundness.integerRate, 0), u: '' }
     ]));
 
     const grid = U.el('div', { class: 'panel-grid' });
@@ -439,7 +448,9 @@ window.Results = (function () {
     p1.appendChild(U.el('p', {
       class: 'panel__caption',
       html: '饼图 ' + U.fmt(d.mae.pie_none.mean, 1) + ' → ' + U.fmt(d.mae.pie_tick.mean, 1) +
-        '；条形 ' + U.fmt(d.mae.bar_none.mean, 1) + ' → ' + U.fmt(d.mae.bar_tick.mean, 1) + '。'
+        '；条形 ' + U.fmt(d.mae.bar_none.mean, 1) + ' → ' + U.fmt(d.mae.bar_tick.mean, 1) + '。' +
+        '真值带一位小数（如 42.6%），滑杆步长 0.1%；整数回答占 ' + U.pct(d.roundness.integerRate, 0) +
+        '，5 的倍数占 ' + U.pct(d.roundness.multiple5Rate, 0) + '。'
     }));
     grid.appendChild(p1);
 
