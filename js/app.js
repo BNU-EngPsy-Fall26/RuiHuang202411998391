@@ -141,11 +141,21 @@ window.App = (function () {
 
     const status = $('#home-status');
     const doneIds = Object.keys(s.sessions || {}).filter(k => s.sessions[k].trials && s.sessions[k].trials.length);
-    if (doneIds.length) {
+    const placeholder = window.CONFIG.project === 'ABC234';
+    if (doneIds.length || placeholder) {
       status.hidden = false;
-      status.innerHTML = '本机已完成 ' + doneIds.length + ' / 2 个实验 · 匿名编号 <b class="mono">' + U.esc(pid) +
-        '</b> · <a href="#/results" style="border-bottom:1px solid var(--copper)">查看结果</a>';
-      if (doneIds.length === 2) status.innerHTML += ' · 两个都做完了，谢谢。';
+      let html = '';
+      if (placeholder) {
+        html += '<b>还没填项目码</b>：打开 <span class="mono">js/config.js</span>，把第 8 行的 ' +
+          '<span class="mono">ABC234</span> 换成你在 /hw2 拿到的 6 位项目码，否则数据不会记到你的项目。';
+      }
+      if (doneIds.length) {
+        if (html) html += '<br>';
+        html += '本机已完成 ' + doneIds.length + ' / 2 个实验 · 匿名编号 <b class="mono">' + U.esc(pid) +
+          '</b> · <a href="#/results" style="border-bottom:1px solid var(--copper)">查看结果</a>';
+        if (doneIds.length === 2) html += ' · 两个都做完了，谢谢。';
+      }
+      status.innerHTML = html;
     } else {
       status.hidden = true;
     }
