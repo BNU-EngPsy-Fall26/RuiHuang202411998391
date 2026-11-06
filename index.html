@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>冲突与比例 · 注意实验室</title>
+<meta name="description" content="两个经典注意实验的网页复现与改进：Stroop 颜色命名（整合 vs 分离）与 Cleveland–McGill 比例判断（有无刻度）。">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/experiment.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead__row">
+    <a class="brand" href="#/">
+      <span class="brand__en">ATTENTION LAB</span>
+      <span class="brand__cn">注意实验室</span>
+    </a>
+    <p class="masthead__meta">复现 + 改进 · Vol.02 / 2026 秋</p>
+    <nav class="nav" aria-label="主导航">
+      <a href="#/results">结果</a>
+      <a href="#/method">方法</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ 首页 ============ -->
+  <section class="screen" id="screen-home" data-screen="home">
+    <div class="hero">
+      <p class="kicker">BNU · 工程心理学 · 作业二</p>
+      <h1 class="display">冲突与比例</h1>
+      <p class="display-sub">Conflict &amp; Proportion <span>复现 + 改进</span></p>
+    </div>
+
+    <div class="hero-grid">
+      <p class="lede">
+        两个经典注意实验，重做成可以在浏览器里直接完成的网页实验。
+        每个实验都在原版之外加入一个<b>新条件</b>，用同一批被试的数据检验它是否真的让表现变好。
+      </p>
+      <dl class="hero-facts">
+        <div><dt>被试</dt><dd>匿名编号，无需姓名</dd></div>
+        <div><dt>时长</dt><dd>单个实验约 6 分钟</dd></div>
+        <div><dt>设备</dt><dd>电脑 + 键盘（不支持手机）</dd></div>
+      </dl>
+    </div>
+
+    <div class="exp-grid" id="home-cards"><!-- 由 app.js 渲染 --></div>
+
+    <div class="home-status" id="home-status" hidden></div>
+
+    <section class="fold" aria-labelledby="fold-design">
+      <h2 class="fold__title" id="fold-design">设计说明</h2>
+      <div class="fold__body">
+        <table class="table table--tight">
+          <thead>
+            <tr><th>实验</th><th>自变量</th><th>因变量</th><th>试次</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>01 Stroop</td>
+              <td>一致性（一致 / 不一致）× 显示（整合 / 分离）</td>
+              <td>反应时、正确率</td>
+              <td>80（另 12 练习）</td>
+            </tr>
+            <tr>
+              <td>02 比例判断</td>
+              <td>图形（饼图 / 条形）× 刻度（无 / 有）</td>
+              <td>判断比例、绝对误差</td>
+              <td>40（另 4 练习）</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          两个实验互相独立，可以只做一个，也可以都做；都做时使用同一个匿名编号，方便事后把两份数据对上。
+          完整的方法、出处与预注册预测见 <a href="#/method">方法</a> 页。
+        </p>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ 知情同意 ============ -->
+  <section class="screen" id="screen-consent" data-screen="consent" hidden>
+    <div class="sheet">
+      <p class="kicker">Before we begin</p>
+      <h1 class="title">知情同意</h1>
+      <p class="lede lede--small">
+        这是一个课程作业实验，目的是复现两个经典的注意实验，并检验我们自己加的改进条件。
+        请先读完下面几点，再决定是否参加。
+      </p>
+
+      <ol class="consent-list">
+        <li><b>你会做什么。</b>在电脑上完成一个或两个短实验：按键判断颜色，或拖动滑块估计图形比例。单个实验 5–7 分钟。</li>
+        <li><b>会收集什么。</b>只记录你的反应时、按键/判断值，以及浏览器窗口大小这类设备信息。我们<b>不收集</b>姓名、学号、IP、摄像头或麦克风。</li>
+        <li><b>匿名编号。</b>你会拿到一个随机编号（如 <span class="mono" id="consent-pid">P-0000</span>），数据只用这个编号标识。</li>
+        <li><b>数据去哪。</b>试次数据会上传到课程「注意实验室」的收数接口，只有任课教师与助教能下载；结果页展示的是<b>全体匿名汇总</b>。</li>
+        <li><b>自愿与退出。</b>你可以随时按 Esc 退出，已产生的数据可以要求删除；不参加不会影响课程成绩。</li>
+        <li><b>可能的不适。</b>长时间盯着屏幕看颜色、做快速按键可能有点累，随时可以停下来休息。</li>
+      </ol>
+
+      <label class="checkline">
+        <input type="checkbox" id="consent-check">
+        <span>我已阅读以上说明，自愿参加，并同意以上述方式记录和使用我的数据。</span>
+      </label>
+
+      <div class="actions">
+        <button class="btn btn--primary" id="consent-continue" disabled>同意并继续</button>
+        <a class="btn btn--ghost" href="#/">返回</a>
+      </div>
+      <p class="note">若有疑问，请通过课程群联系实验者。</p>
+    </div>
+  </section>
+
+  <!-- ============ 设备检查 ============ -->
+  <section class="screen" id="screen-check" data-screen="check" hidden>
+    <div class="sheet">
+      <p class="kicker">Setup</p>
+      <h1 class="title">开始之前，先确认三件事</h1>
+
+      <div class="check-grid">
+        <div class="check-item" id="check-window">
+          <p class="check-item__label">01 · 窗口</p>
+          <p class="check-item__value" id="check-window-value">—</p>
+          <p class="check-item__hint">建议全屏（F11），窗口至少 1000 × 640。</p>
+        </div>
+        <div class="check-item" id="check-keys">
+          <p class="check-item__label">02 · 键盘</p>
+          <p class="check-item__value" id="check-keys-value">请依次按下 D F J K</p>
+          <div class="keypads" aria-hidden="true">
+            <span data-key="d">D</span><span data-key="f">F</span><span data-key="j">J</span><span data-key="k">K</span>
+          </div>
+        </div>
+        <div class="check-item" id="check-color">
+          <p class="check-item__label">03 · 颜色</p>
+          <p class="check-item__value">这四种颜色你能清楚区分吗？</p>
+          <div class="swatches" aria-hidden="true">
+            <i style="--c:#E2483D"></i><i style="--c:#E8B23A"></i><i style="--c:#4A7FE0"></i><i style="--c:#3FA46A"></i>
+          </div>
+          <div class="check-btns">
+            <button class="btn btn--small" id="color-yes">能</button>
+            <button class="btn btn--small btn--ghost" id="color-no">不能 / 不确定</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" id="check-continue" disabled>继续</button>
+        <a class="btn btn--ghost" href="#/">返回</a>
+      </div>
+      <p class="note" id="check-note">键盘检查通过后才能继续。实验需要键盘，不能用手机完成。</p>
+    </div>
+  </section>
+
+  <!-- ============ 指导语 ============ -->
+  <section class="screen" id="screen-brief" data-screen="brief" hidden>
+    <div class="sheet sheet--wide">
+      <p class="kicker" id="brief-kicker">Experiment 01</p>
+      <h1 class="title" id="brief-title">—</h1>
+      <div class="brief-grid">
+        <div class="brief-main" id="brief-instructions"><!-- 由 app.js 注入 --></div>
+        <aside class="brief-side" id="brief-facts"><!-- 由 app.js 注入 --></aside>
+      </div>
+      <div class="actions">
+        <button class="btn btn--primary" id="brief-start">开始练习</button>
+        <a class="btn btn--ghost" href="#/">换一个实验</a>
+      </div>
+      <p class="note">按空格或点击按钮开始。实验进行中可按 Esc 随时退出。</p>
+    </div>
+  </section>
+
+  <!-- ============ 试次运行 ============ -->
+  <section class="screen screen--run" id="screen-run" data-screen="run" hidden>
+    <div class="runbar">
+      <span class="runbar__label" id="run-label">—</span>
+      <div class="runbar__track" role="progressbar" aria-label="进度"><i id="run-progress"></i></div>
+      <span class="runbar__count" id="run-count">0 / 0</span>
+    </div>
+    <div class="stage" id="stage">
+      <div class="stage__inner" id="stage-inner"></div>
+    </div>
+    <p class="stage-hint" id="stage-hint"></p>
+    <div class="run-overlay" id="run-overlay" hidden>
+      <div class="run-overlay__box">
+        <p class="kicker" id="overlay-kicker">Paused</p>
+        <h2 class="title title--small" id="overlay-title">请回到实验窗口</h2>
+        <p class="lede lede--small" id="overlay-text">刚才这一试次已作废，按空格继续。</p>
+        <button class="btn btn--primary" id="overlay-continue">继续</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 结束页 ============ -->
+  <section class="screen" id="screen-done" data-screen="done" hidden>
+    <div class="sheet">
+      <p class="kicker" id="done-kicker">Session complete</p>
+      <h1 class="title" id="done-title">这一段完成了</h1>
+      <div class="result-summary" id="done-summary"><!-- 由 app.js 注入 --></div>
+      <div class="upload-status" id="done-upload"><!-- 上传状态 --></div>
+      <div class="actions" id="done-actions"></div>
+      <p class="note">建议保留一个数据备份。若上传失败，请把备份文件发给实验者。</p>
+    </div>
+  </section>
+
+  <!-- ============ 结果 ============ -->
+  <section class="screen screen--wide" id="screen-results" data-screen="results" hidden>
+    <div class="results-head">
+      <p class="kicker">Results</p>
+      <h1 class="title">结果</h1>
+      <p class="lede lede--small" id="results-scope">正在读取数据…</p>
+      <div class="tabs" role="tablist" id="results-tabs">
+        <button class="tab" role="tab" data-tab="stroop" aria-selected="true">Stroop</button>
+        <button class="tab" role="tab" data-tab="prop">比例判断</button>
+        <button class="tab" role="tab" data-tab="overview">总览</button>
+      </div>
+    </div>
+    <div class="tabpanel" id="tab-stroop"></div>
+    <div class="tabpanel" id="tab-prop" hidden></div>
+    <div class="tabpanel" id="tab-overview" hidden></div>
+  </section>
+
+  <!-- ============ 方法 ============ -->
+  <section class="screen screen--wide" id="screen-method" data-screen="method" hidden>
+    <div class="results-head">
+      <p class="kicker">Method</p>
+      <h1 class="title">方法与出处</h1>
+      <p class="lede lede--small">变量、条件与试次、数据字段、预注册预测，以及 AI 使用说明。</p>
+    </div>
+
+    <section class="method-block">
+      <h2 class="h2">01 · Stroop 颜色命名</h2>
+      <p>
+        复现 Stroop（1935）Experiment 2：命名色块 63.3 s / 100 个，命名字义与墨色冲突的词 110.3 s / 100 个，
+        干扰 +47.0 s（+74.3%）。本实验把口头命名改为四色按键，并逐试次计时。
+      </p>
+      <table class="table table--tight">
+        <tbody>
+          <tr><th>自变量</th><td>一致性（一致 / 不一致）× 显示（整合 / 分离）</td></tr>
+          <tr><th>因变量</th><td>反应时（ms，正确试次）、正确率</td></tr>
+          <tr><th>试次</th><td>2 块 × 40（每格 20）＝ 80 正式试次；练习 12 次</td></tr>
+          <tr><th>计时</th><td>注视 500 ms → 刺激至按键（上限 2500 ms）→ 空屏 400 ms</td></tr>
+          <tr><th>改进</th><td>分离显示：词用中性灰呈现，颜色由上方独立色块承载，检验干扰是否下降</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="method-block">
+      <h2 class="h2">02 · Cleveland–McGill 比例判断</h2>
+      <p>
+        复现 Cleveland &amp; McGill（1984）的基本知觉任务层级：位置（共同刻度）＞ 长度 ＞ 角度/面积。
+        为了不把答案直接交给被试，刻度只画 25/50/75 三条线、不标数字；比例池也避开了这三个值。
+      </p>
+      <table class="table table--tight">
+        <tbody>
+          <tr><th>自变量</th><td>图形（饼图 / 条形）× 刻度（无 / 有）</td></tr>
+          <tr><th>因变量</th><td>判断比例（0–100）、绝对误差（百分点）</td></tr>
+          <tr><th>试次</th><td>2 × 2 × 10 ＝ 40 正式试次；练习 4 次</td></tr>
+          <tr><th>比例池</th><td>5, 12, 22, 33, 41, 58, 67, 78, 88, 95（四条件完全交叉）</td></tr>
+          <tr><th>改进</th><td>加 25/50/75 刻度，把角度判断部分转成位置判断</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="method-block">
+      <h2 class="h2">03 · 预测（收数前定稿）</h2>
+      <table class="table table--tight">
+        <thead><tr><th>编号</th><th>预测</th><th>检验</th></tr></thead>
+        <tbody>
+          <tr><td>P1</td><td>分离条件的 Stroop 干扰小于整合条件（约 80–120 ms → 30–60 ms）</td><td>2×2 交互 + 干扰差 95% CI</td></tr>
+          <tr><td>P2</td><td>分离条件的干扰不为零</td><td>干扰差的 CI 不覆盖 0，且分离条件干扰的 CI 下限 &gt; 0</td></tr>
+          <tr><td>P3</td><td>有刻度的判断误差小于无刻度</td><td>配对比较 + 95% CI</td></tr>
+          <tr><td>P4</td><td>刻度对饼图的帮助大于条形图（交互）</td><td>2×2 交互 + η²p</td></tr>
+          <tr><td>P5</td><td>无刻度时小比例高估、大比例低估；有刻度时偏差变小</td><td>周期幂模型 β</td></tr>
+        </tbody>
+      </table>
+      <p class="note">完整预测文本（含方向与预期幅度）另见仓库 <span class="mono">docs/预测.md</span>，收数前单独 commit。</p>
+    </section>
+
+    <section class="method-block">
+      <h2 class="h2">04 · 数据与代码</h2>
+      <table class="table table--tight">
+        <tbody>
+          <tr><th>上传</th><td><span class="mono">POST /api/hw2/submit</span>；每个实验结束提交一次</td></tr>
+          <tr><th>字段</th><td>Stroop：cond / congruency / display / block / word / ink / rt / correct / timeout</td></tr>
+          <tr><th></th><td>比例：cond / chart / ticks / true_prop / judged / err / rt</td></tr>
+          <tr><th>备份</th><td>本地 localStorage + JSON/CSV 下载，上传失败也不丢数据</td></tr>
+          <tr><th>代码</th><td>纯 HTML + CSS + JS，无构建、无 CDN、无 ES module，双击 index.html 即可运行</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="method-block">
+      <h2 class="h2">05 · 出处</h2>
+      <ol class="refs">
+        <li>Stroop, J. R. (1935). Studies of interference in serial verbal reactions. <i>Journal of Experimental Psychology, 18</i>, 643–662.</li>
+        <li>Dyer, F. N. (1973). The Stroop phenomenon and its use in the study of perceptual, cognitive, and response processes. <i>Memory &amp; Cognition, 1</i>, 106–120.</li>
+        <li>MacLeod, C. M. (1991). Half a century of research on the Stroop effect: An integrative review. <i>Psychological Bulletin, 109</i>, 163–203.</li>
+        <li>Cleveland, W. S., &amp; McGill, R. (1984). Graphical perception: Theory, experimentation, and application to the development of graphical methods. <i>JASA, 79</i>, 531–554.</li>
+        <li>Hollands, J. G., &amp; Dyre, B. P. (2000). Bias in proportion judgments: The cyclical power model. <i>Psychological Review, 107</i>, 500–524.</li>
+        <li>Heer, J., &amp; Bostock, M. (2010). Crowdsourcing graphical perception. <i>CHI '10</i>, 203–212.</li>
+        <li>Wagenmakers, E.-J., van der Maas, H. L. J., &amp; Grasman, R. P. P. P. (2007). An EZ-diffusion model for response time and accuracy. <i>Psychonomic Bulletin &amp; Review, 14</i>, 3–22.</li>
+      </ol>
+    </section>
+
+    <section class="method-block">
+      <h2 class="h2">06 · AI 使用说明</h2>
+      <p>
+        本项目的网页实现、图表绘制与文字润色使用了 AI 编程助手；<b>问题界定、实验设计、预测的提出、数据解释与结论由本人完成</b>。
+        所有试次数据由真实被试产生，未编造、未篡改；分析脚本与网页使用同一套统计口径。
+      </p>
+    </section>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>ATTENTION LAB · 注意实验室 — 北京师范大学 工程心理学 作业二 · 2026 秋</p>
+  <p class="footer__meta">数据仅用于课程实验 · 匿名编号 · 不收集个人信息</p>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/ddm.js"></script>
+<script src="js/propmodel.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/upload.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/stroop.js"></script>
+<script src="js/propjudge.js"></script>
+<script src="js/results.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
