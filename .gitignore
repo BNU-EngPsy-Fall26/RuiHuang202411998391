@@ -1,0 +1,6 @@
+# 本地/依赖/临时文件
+node_modules/
+data/local/
+*.log
+.DS_Store
+Thumbs.db
