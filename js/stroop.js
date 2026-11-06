@@ -252,25 +252,10 @@ window.Stroop = (function () {
 
   function feedback(host, ok, trial) {
     host.innerHTML = '';
-    const box = document.createElement('div');
-    box.style.display = 'flex';
-    box.style.flexDirection = 'column';
-    box.style.alignItems = 'center';
-    box.style.gap = '18px';
-
-    const word = document.createElement('span');
-    word.className = 'word';
-    word.style.color = trial.ink_hex;
-    word.style.opacity = '0.9';
-    word.textContent = trial.ink;
-
     const tag = document.createElement('span');
     tag.className = 'feedback ' + (ok ? 'feedback--ok' : 'feedback--bad');
     tag.textContent = ok ? '✓ 正确' : ('✗ 应为 ' + trial.ink);
-
-    box.appendChild(word);
-    box.appendChild(tag);
-    host.appendChild(box);
+    host.appendChild(tag);
   }
 
   /* ---------- 小结 ---------- */
@@ -347,8 +332,8 @@ window.Stroop = (function () {
         { k: '时长', v: '约 5–6 分钟' },
         { k: '设计', v: '2×2 被试内' },
         { k: '改进', v: '分离显示' },
-        { k: '键位', v: '按编号平衡的两套映射之一' },
-        { k: '计时', v: '刺激至按键，上限 2.5 s' }
+        { k: '节奏', v: '注视 0.5 s → 刺激 ≤2 s → 空屏 0.5 s' },
+        { k: '键位', v: '两套左右镜像映射之一，屏幕上会显示' }
       ],
       side: '若你无法区分红/绿，请先告诉实验者。键位以屏幕上方的提示为准。'
     };

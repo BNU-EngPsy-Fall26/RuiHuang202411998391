@@ -265,7 +265,23 @@ window.App = (function () {
 
   function timing(adapter) {
     const c = adapter.meta.id === 'prop_ticks' ? window.CONFIG.prop : window.CONFIG.stroop;
-    return { fixation: c.fixation, blank: c.blank };
+    return {
+      fixation: c.fixation,
+      blank: c.blank,
+      jitter: c.blankJitter || 0,
+      countdown: c.countdown || 3
+    };
+  }
+
+  /** 区组开始前的 3-2-1 准备：让被试把眼睛放回屏幕中央，再进入注视点 */
+  async function countdown(host) {
+    for (let i = 3; i > 0; i--) {
+      host.innerHTML = '<div class="countdown">' + i + '</div>';
+      await Engine.sleep(700);
+      if (state.stopped) return false;
+    }
+    host.innerHTML = '';
+    return true;
   }
 
   function runUI(adapter) {
@@ -337,7 +353,9 @@ window.App = (function () {
     const host = $('#stage-inner');
     const pid = ensurePid();
 
-    // ---- 练习 ----
+    // ---- 练习（先 3-2-1，再进入"注视点 → 刺激 → 空屏"循环）----
+    if (!await countdown(host)) return abortRun();
+
     let redo = true;
     while (redo) {
       const trials = adapter.practice(pid);
@@ -351,6 +369,7 @@ window.App = (function () {
         adapter: adapter,
         fixation: timing(adapter).fixation,
         blank: timing(adapter).blank,
+        jitter: timing(adapter).jitter,
         practice: true,
         shouldStop: () => state.stopped,
         onTrial: t => { state.practiceTrials.push(t); $('#stage-hint').textContent = adapter.hint(t) || ''; },
@@ -403,12 +422,15 @@ window.App = (function () {
         setProgress(0, block.trials.length);
         $('#run-label').textContent = block.label;
 
+        if (!await countdown(host)) return abortRun();
+
         const res = await Engine.runBlock({
           host: host,
           trials: block.trials,
           adapter: adapter,
           fixation: timing(adapter).fixation,
           blank: timing(adapter).blank,
+          jitter: timing(adapter).jitter,
           practice: false,
           shouldStop: () => state.stopped,
           onTrial: t => { state.trials.push(t); },
@@ -420,12 +442,16 @@ window.App = (function () {
       const trials = adapter.formal();
       $('#stage-hint').textContent = adapter.hint(trials[0]) || '';
       setProgress(0, trials.length);
+
+      if (!await countdown(host)) return abortRun();
+
       const res = await Engine.runBlock({
         host: host,
         trials: trials,
         adapter: adapter,
         fixation: timing(adapter).fixation,
         blank: timing(adapter).blank,
+        jitter: timing(adapter).jitter,
         practice: false,
         shouldStop: () => state.stopped,
         onTrial: t => { state.trials.push(t); },

@@ -21,9 +21,11 @@ window.CONFIG = {
   /* ---------- 实验一：Stroop ---------- */
   stroop: {
     id: 'stroop_sep',
-    fixation: 500,          // 注视点 ms
-    deadline: 2500,         // 反应上限 ms
-    blank: 400,             // 试次间隔 ms
+    fixation: 500,          // 注视点 ms（500 ms 是计算机化 Stroop 的常用值）
+    deadline: 2000,         // 反应窗口 ms：超时即结束该试次
+    blank: 500,             // 反应后空屏 ms（试次间间隔的主体）
+    blankJitter: 100,       // 空屏的随机抖动 0–100 ms，减少节奏预期
+    countdown: 3,           // 每个区组开始前的 3-2-1 准备
     practiceN: 12,
     perBlock: 40,
     congruentPerBlock: 20,
@@ -58,7 +60,9 @@ window.CONFIG = {
   prop: {
     id: 'prop_ticks',
     fixation: 300,
-    blank: 400,
+    blank: 500,
+    blankJitter: 100,
+    countdown: 3,
     deadline: null,          // 不限时
     practiceN: 4,
     reps: 10,
@@ -91,7 +95,7 @@ window.CONFIG = {
   /* ---------- 统计与展示 ---------- */
   analysis: {
     minRT: 150,
-    maxRT: 2500,
+    maxRT: 2000,
     minAccuracy: 0.7,
     bootstrap: 10000
   }

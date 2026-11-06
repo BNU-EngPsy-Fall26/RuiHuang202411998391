@@ -47,7 +47,8 @@ window.Engine = (function () {
     const adapter = opts.adapter;
     const trials = opts.trials || [];
     const fixationMs = opts.fixation === undefined ? 500 : opts.fixation;
-    const blankMs = opts.blank === undefined ? 400 : opts.blank;
+    const blankMs = opts.blank === undefined ? 500 : opts.blank;
+    const jitterMs = opts.jitter || 0;
 
     for (let i = 0; i < trials.length; i++) {
       if (opts.shouldStop && opts.shouldStop()) return { stopped: true, done: i };
@@ -82,7 +83,7 @@ window.Engine = (function () {
       if (opts.onTrial) opts.onTrial(record);
       if (opts.onProgress) opts.onProgress(i + 1, trials.length);
 
-      await sleep(blankMs);
+      await sleep(blankMs + (jitterMs ? Math.random() * jitterMs : 0));
     }
     return { stopped: false, done: trials.length };
   }
