@@ -126,6 +126,18 @@ window.Results = (function () {
       ddm[c] = window.DDM.fitCondition(rt, nTotal, 1500);
     });
 
+    // 顺序检查：同手 / 换手的试次数与平均 RT（按键平衡是否真的做到了）
+    const transition = {};
+    conds.forEach(c => {
+      const xs = trials.filter(t => t.cond === c);
+      const same = xs.filter(t => Number(t.hand_switch) === 0).map(t => t.rt);
+      const sw = xs.filter(t => Number(t.hand_switch) === 1).map(t => t.rt);
+      transition[c] = {
+        same: { n: same.length, rt: window.S.mean(same) },
+        switch: { n: sw.length, rt: window.S.mean(sw) }
+      };
+    });
+
     const anovaCells = subjects.map(s => [
       [s.means.int_cong, s.means.int_incong],
       [s.means.sep_cong, s.means.sep_incong]
@@ -145,6 +157,7 @@ window.Results = (function () {
       anova: subjects.length >= 2 ? window.S.anova2x2(anovaCells) : null,
       density: density,
       ddm: ddm,
+      transition: transition,
       conds: conds
     };
   }
@@ -344,6 +357,36 @@ window.Results = (function () {
     table.appendChild(tbody);
     p4.appendChild(U.el('div', { class: 'table-wrap' }, table));
     grid.appendChild(p4);
+
+    // 顺序与按键平衡
+    const labels = {
+      int_cong: '整合·一致', int_incong: '整合·不一致',
+      sep_cong: '分离·一致', sep_incong: '分离·不一致'
+    };
+    const pOrder = panel('顺序与按键：平衡检查', '同手 / 换手');
+    const tOrder = U.el('table', { class: 'table table--tight' });
+    tOrder.innerHTML = '<thead><tr><th>条件</th><th>同手 n</th><th>同手 RT</th><th>换手 n</th><th>换手 RT</th><th>差</th></tr></thead>';
+    const bOrder = U.el('tbody');
+    ['int_cong', 'int_incong', 'sep_cong', 'sep_incong'].forEach(function (c) {
+      const t = (d.transition && d.transition[c]) || { same: {}, switch: {} };
+      const a = t.same || {}, b = t.switch || {};
+      bOrder.appendChild(U.el('tr', {},
+        U.el('td', { text: labels[c] }),
+        U.el('td', { text: String(a.n || 0) }),
+        U.el('td', { text: U.fmt(a.rt, 0) }),
+        U.el('td', { text: String(b.n || 0) }),
+        U.el('td', { text: U.fmt(b.rt, 0) }),
+        U.el('td', { text: U.fmt((a.rt || 0) - (b.rt || 0), 0) })
+      ));
+    });
+    tOrder.appendChild(bOrder);
+    pOrder.appendChild(U.el('div', { class: 'table-wrap' }, tOrder));
+    pOrder.appendChild(U.el('p', {
+      class: 'panel__caption',
+      html: '键位映射按编号在两套左右镜像映射之间平衡；每个区组 39 次过渡里，换手 18–21 次。' +
+        '若「换手 − 同手」的差较大，说明按键转换是重要协变量；Stroop 效应仍按条件内平均计算。'
+    }));
+    grid.appendChild(pOrder);
 
     // 与原文对比
     const p5 = panel('与 Stroop (1935) 对比', '口径不同，只比方向与相对大小', 'panel--wide');

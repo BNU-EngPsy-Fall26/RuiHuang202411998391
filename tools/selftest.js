@@ -32,17 +32,49 @@ check('练习同时含整合/分离', prac.some(t => t.display === 'integrated')
 
 const plan = Stroop.formal('P-AAAA');
 check('Stroop 两个区组', plan.blocks.length === 2);
+check('返回键位映射', plan.map && (plan.map.id === 'A' || plan.map.id === 'B'), 'map=' + (plan.map && plan.map.id));
 plan.blocks.forEach((b, i) => {
   check('区组 ' + (i + 1) + ' 有 40 试次', b.trials.length === 40, 'n=' + b.trials.length);
   const cong = b.trials.filter(t => t.congruency === 'congruent').length;
   const inc = b.trials.filter(t => t.congruency === 'incongruent').length;
   check('区组 ' + (i + 1) + ' 一致/不一致 = 20/20', cong === 20 && inc === 20, cong + '/' + inc);
+
   const inks = {};
   b.trials.forEach(t => { inks[t.ink] = (inks[t.ink] || 0) + 1; });
   check('区组 ' + (i + 1) + ' 四种墨色各 10 次', Object.values(inks).every(v => v === 10), JSON.stringify(inks));
+
   const bad = b.trials.filter(t => (t.congruency === 'incongruent') === (t.word === t.ink));
   check('区组 ' + (i + 1) + ' 词义与墨色关系正确', bad.length === 0);
+
+  // ---- 按键与顺序平衡 ----
+  const keys = {};
+  b.trials.forEach(t => { keys[t.respKey] = (keys[t.respKey] || 0) + 1; });
+  check('区组 ' + (i + 1) + ' 四个键各 10 次', Object.values(keys).every(v => v === 10), JSON.stringify(keys));
+
+  const switches = b.trials.filter(t => t.hand_switch === 1).length;
+  check('区组 ' + (i + 1) + ' 换手过渡 18–21 次', switches >= 18 && switches <= 21, 'switch=' + switches);
+
+  const adjacentSame = b.trials.filter((t, k) => k > 0 && t.respKey === b.trials[k - 1].respKey).length;
+  check('区组 ' + (i + 1) + ' 无相邻同键', adjacentSame === 0);
+
+  const mapOk = b.trials.every(t => {
+    const m = plan.map;
+    return m.keys[t.ink] === t.respKey && t.correct_key === t.respKey;
+  });
+  check('区组 ' + (i + 1) + ' 键位符合映射', mapOk);
+
+  const handOk = b.trials.every(t => (t.hand === 'L') === (t.respKey === 'd' || t.respKey === 'f'));
+  check('区组 ' + (i + 1) + ' 左右手标记正确', handOk);
 });
+
+// 两套镜像映射都应能被分配到
+let sawA = false, sawB = false;
+for (let i = 0; i < 40; i++) {
+  const m = Stroop.mappingFor('P-' + i);
+  if (m.id === 'A') sawA = true;
+  if (m.id === 'B') sawB = true;
+}
+check('A/B 两套映射都会出现', sawA && sawB);
 
 const plan2 = Stroop.formal('P-AAAA');
 check('同一编号的区组顺序稳定', plan2.blocks[0].display === plan.blocks[0].display);

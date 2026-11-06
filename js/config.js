@@ -1,12 +1,13 @@
 /* ============================================================
    config.js — 全部可调参数集中在这里
    唯一需要你手动改的是 PROJECT：把 /hw2 拿到的 6 位项目码填进来。
+   下载密钥不要写进本文件。
    ============================================================ */
 
 window.CONFIG = {
 
   /* ---------- 收数接口 ---------- */
-  project: 'ABC234',                     // ← 改成你的 6 位项目码（不要用下载密钥）
+  project: 'NLTYFA',                     // 6 位项目码（不是下载密钥）
   apiBase: 'https://attention-lab-production.up.railway.app',
 
   site: {
@@ -27,12 +28,20 @@ window.CONFIG = {
     perBlock: 40,
     congruentPerBlock: 20,
 
-    // 颜色 → 按键。键位固定，降低被试的映射负担
+    // 颜色（不含键位；键位由下面的映射决定，见 keyMaps）
     colors: [
-      { name: '红', key: 'd', hex: '#E2483D' },
-      { name: '黄', key: 'f', hex: '#E8B23A' },
-      { name: '蓝', key: 'j', hex: '#4A7FE0' },
-      { name: '绿', key: 'k', hex: '#3FA46A' }
+      { name: '红', hex: '#E2483D' },
+      { name: '黄', hex: '#E8B23A' },
+      { name: '蓝', hex: '#4A7FE0' },
+      { name: '绿', hex: '#3FA46A' }
+    ],
+
+    // 两套镜像键位映射，按被试编号平衡：
+    // A：左手中指 D=红、食指 F=黄；右手食指 J=蓝、中指 K=绿
+    // B：A 的左右镜像，把"食指更省力 / 中指更费力"从颜色上平衡掉
+    keyMaps: [
+      { id: 'A', keys: { '红': 'd', '黄': 'f', '蓝': 'j', '绿': 'k' } },
+      { id: 'B', keys: { '红': 'k', '黄': 'j', '蓝': 'f', '绿': 'd' } }
     ],
 
     // 两个区组：整合（经典彩色词）与分离（灰词 + 上方色块）
@@ -41,9 +50,8 @@ window.CONFIG = {
       { display: 'separated',  label: '分离显示' }
     ],
 
-    minus: '2400',          // 按键提示
-    hintIntegrated: 'D 红 · F 黄 · J 蓝 · K 绿',
-    hintSeparated: 'D 红 · F 黄 · J 蓝 · K 绿 · 判断色块'
+    // 区组内"同手 / 换手"过渡的目标范围（40 试次 → 39 次过渡）
+    switchRange: [18, 21]
   },
 
   /* ---------- 实验二：比例判断 ---------- */

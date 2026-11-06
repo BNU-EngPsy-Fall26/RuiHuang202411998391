@@ -243,7 +243,7 @@ window.App = (function () {
   /* ---------- 指导语 ---------- */
 
   function renderBrief(adapter) {
-    const b = adapter.brief();
+    const b = adapter.brief(ensurePid());
     $('#brief-kicker').textContent = b.kicker;
     $('#brief-title').textContent = b.title;
     $('#brief-instructions').innerHTML = b.html;
@@ -340,7 +340,7 @@ window.App = (function () {
     // ---- 练习 ----
     let redo = true;
     while (redo) {
-      const trials = adapter.practice();
+      const trials = adapter.practice(pid);
       state.practiceTrials = [];
       $('#stage-hint').textContent = adapter.hint(trials[0]) || '';
       setProgress(0, trials.length);
@@ -514,6 +514,14 @@ window.App = (function () {
     });
     next.onclick = function () { enterExperiment(other.meta.id); };
     actions.appendChild(next);
+
+    // 同一个浏览器连续做多位被试时，必须换编号；否则数据会记在同一个人名下
+    const swap = U.el('button', { class: 'btn btn--ghost', text: '下一位被试（换编号）' });
+    swap.onclick = function () {
+      U.store.patch({ pid: U.pid() });
+      go('');
+    };
+    actions.appendChild(swap);
 
     const csv = U.el('button', { class: 'btn btn--ghost', text: '下载 CSV 备份' });
     csv.onclick = function () { window.Upload.backupCSV(adapter.meta.id, trials, pid); };
