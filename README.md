@@ -1,4 +1,4 @@
-在线实验：https://bnu-engpsy-fall26.github.io/RuiHuang202411998391/
+在线实验：https://cyantnian.github.io/attention-lab/
 
 # 冲突与刻度：复现 + 改进
 
@@ -10,9 +10,9 @@
 被试可以只做一个实验，也可以两个都做（用同一个匿名编号）。数据自动上传到课程收数接口（`/hw2`），结果页可看全体匿名汇总。
 
 - **项目码**：`NLTYFA`（见 `js/config.js` 第 10 行；下载密钥不在仓库里）
-- **仓库结构**：作业二在根目录；`作业一_棒球裁判SDT/` 是上一次作业，保留未动
+- **仓库结构**：作业二在根目录；`作业一_棒球裁判SDT/` 是上一次作业，保留未动。课程提交仓库是 `BNU-EngPsy-Fall26/RuiHuang202411998391`，Pages 由个人仓库 `CyanTnian/attention-lab` 托管
 - **多位被试**：同一台电脑连续做时，结束页点「下一位被试（换编号）」，或用链接 `?pid=P01` 指定编号；否则数据会记在同一个人名下
-- **在线地址**：https://bnu-engpsy-fall26.github.io/RuiHuang202411998391/
+- **在线地址**：https://cyantnian.github.io/attention-lab/
 - **本地运行**：双击 `index.html`（Chrome / Edge），无需构建、无需服务器、无需联网也能做实验（上传需要联网）
 
 > 课程要求：代码提交到课程 GitHub Organization；README 写明项目码与运行方法；助教 clone 后双击 `index.html` 能直接运行并成功上传。
