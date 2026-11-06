@@ -233,7 +233,7 @@ window.Results = (function () {
 
     const parts = window.Upload.participants;
     scope.innerHTML = state.scope === 'remote'
-      ? '数据来源：注意实验室收数接口（全体匿名汇总）· 共 ' + state.rows.length +
+      ? '数据来源：课程收数接口（全体匿名汇总）· 共 ' + state.rows.length +
         ' 条试次记录' + (window.Upload.participants ? ' · ' + window.Upload.participants + ' 名被试' : '')
       : '数据来源：本机缓存（接口未返回数据，可能是网络或项目码问题）· 共 ' + state.rows.length + ' 条试次记录';
 

@@ -10,9 +10,9 @@ window.CONFIG = {
   apiBase: 'https://attention-lab-production.up.railway.app',
 
   site: {
-    title: '冲突与比例',
-    lab: 'ATTENTION LAB',
-    labCn: '注意实验室',
+    title: '冲突与刻度',
+    lab: 'CONFLICT & SCALE',
+    labCn: '冲突与刻度',
     version: 'Vol.02 / 2026 秋',
     course: 'BNU · 工程心理学 · 作业二'
   },
